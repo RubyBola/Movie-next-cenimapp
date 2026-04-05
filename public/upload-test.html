@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Test</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f0f2f5;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      .card {
+        background: white;
+        border-radius: 16px;
+        padding: 40px;
+        width: 420px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      }
+
+      h2 {
+        font-size: 20px;
+        color: #1a1a2e;
+        margin-bottom: 6px;
+      }
+
+      p.subtitle {
+        font-size: 13px;
+        color: #888;
+        margin-bottom: 28px;
+      }
+
+      .drop-zone {
+        border: 2px dashed #d0d5dd;
+        border-radius: 12px;
+        padding: 36px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #fafafa;
+        position: relative;
+      }
+
+      .drop-zone:hover,
+      .drop-zone.dragover {
+        border-color: #6c63ff;
+        background: #f3f1ff;
+      }
+
+      .drop-zone input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+      }
+
+      .drop-zone .icon {
+        font-size: 36px;
+        margin-bottom: 10px;
+      }
+
+      .drop-zone .label {
+        font-size: 14px;
+        color: #555;
+      }
+
+      .drop-zone .label span {
+        color: #6c63ff;
+        font-weight: 600;
+      }
+
+      .drop-zone .hint {
+        font-size: 12px;
+        color: #aaa;
+        margin-top: 4px;
+      }
+
+      #preview {
+        display: none;
+        margin-top: 16px;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #eee;
+        position: relative;
+      }
+
+      #preview img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        display: block;
+      }
+
+      #preview .file-name {
+        padding: 8px 12px;
+        font-size: 12px;
+        color: #555;
+        background: #fafafa;
+        border-top: 1px solid #eee;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      button {
+        width: 100%;
+        margin-top: 20px;
+        padding: 13px;
+        background: #6c63ff;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background: #574fd6;
+      }
+      button:disabled {
+        background: #b0aee8;
+        cursor: not-allowed;
+      }
+
+      #result {
+        margin-top: 20px;
+        border-radius: 10px;
+        overflow: hidden;
+        display: none;
+      }
+
+      .result-header {
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: white;
+      }
+
+      .result-header.success {
+        background: #22c55e;
+      }
+      .result-header.error {
+        background: #ef4444;
+      }
+
+      #result pre {
+        background: #1e1e2e;
+        color: #cdd6f4;
+        font-size: 12px;
+        padding: 14px;
+        overflow-x: auto;
+        margin: 0;
+        max-height: 200px;
+      }
+
+      .loader {
+        display: none;
+        text-align: center;
+        margin-top: 16px;
+        font-size: 13px;
+        color: #888;
+      }
+
+      .loader span {
+        display: inline-block;
+        animation: pulse 1.2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>📤 Image Upload Tester</h2>
+      <p class="subtitle">Test your <code>/users/upload</code> endpoint</p>
+
+      <div class="drop-zone" id="dropZone">
+        <input
+          type="file"
+          id="fileInput"
+          accept="image/jpg,image/jpeg,image/png"
+        />
+        <div class="icon">🖼️</div>
+        <div class="label"><span>Click to choose</span> or drag & drop</div>
+        <div class="hint">JPG, JPEG, PNG only</div>
+      </div>
+
+      <div id="preview">
+        <img id="previewImg" src="" alt="Preview" />
+        <div class="file-name" id="fileName"></div>
+      </div>
+
+      <button id="uploadBtn" disabled onclick="uploadFile()">
+        Upload Image
+      </button>
+
+      <div class="loader"><span>⏳ Uploading to Cloudinary...</span></div>
+
+      <div id="result">
+        <div class="result-header" id="resultHeader"></div>
+        <pre id="resultBody"></pre>
+      </div>
+    </div>
+
+    <script>
+      const fileInput = document.getElementById("fileInput");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const preview = document.getElementById("preview");
+      const previewImg = document.getElementById("previewImg");
+      const fileName = document.getElementById("fileName");
+      const result = document.getElementById("result");
+      const resultHeader = document.getElementById("resultHeader");
+      const resultBody = document.getElementById("resultBody");
+      const loader = document.querySelector(".loader");
+      const dropZone = document.getElementById("dropZone");
+
+      fileInput.addEventListener("change", () =>
+        handleFile(fileInput.files[0]),
+      );
+
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("dragover");
+      });
+      dropZone.addEventListener("dragleave", () =>
+        dropZone.classList.remove("dragover"),
+      );
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("dragover");
+        handleFile(e.dataTransfer.files[0]);
+      });
+
+      function handleFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImg.src = e.target.result;
+          fileName.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+          preview.style.display = "block";
+          uploadBtn.disabled = false;
+          result.style.display = "none";
+        };
+        reader.readAsDataURL(file);
+      }
+
+      async function uploadFile() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        uploadBtn.disabled = true;
+        loader.style.display = "block";
+        result.style.display = "none";
+
+        try {
+          const res = await fetch("http://localhost:5000/users/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await res.json();
+          loader.style.display = "none";
+          result.style.display = "block";
+
+          if (res.ok) {
+            resultHeader.textContent = "✅ Upload Successful!";
+            resultHeader.className = "result-header success";
+          } else {
+            resultHeader.textContent = "❌ Upload Failed";
+            resultHeader.className = "result-header error";
+          }
+
+          resultBody.textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+          loader.style.display = "none";
+          result.style.display = "block";
+          resultHeader.textContent = "❌ Network Error";
+          resultHeader.className = "result-header error";
+          resultBody.textContent = err.message;
+        } finally {
+          uploadBtn.disabled = false;
+        }
+      }
+    </script>
+  </body>
+</html>
