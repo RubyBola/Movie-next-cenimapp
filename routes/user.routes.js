@@ -1,23 +1,27 @@
 const express = require("express")
-const { signup, login, loop, updateUser, updatePassword, uploadProfileImage, fetchUser,verifyEmail,loginUser,uploadProduct,forgotPassword,resetPassword} = require("../controller/signup.controller");
+const { signup, login,loop,adminLogin, updateUser, updatePassword, uploadProfileImage, fetchUser,verifyEmail,loginUser,uploadProduct,forgotPassword,resetPassword, adminSignup} = require("../controller/signup.controller");
 const upload = require("../middleware/upload");
 const protect = require("../middleware/auth")
 const router = express.Router()
 const cloudinary = require("../config/cloudinary");
 
 
-router.post("/api/signup", signup)
-router.post("/api/login", login)
-router.put("/api/update-user/:id", updateUser)
-router.get("/api/loop", loop)
-router.put("/api/update-password/:id", updatePassword)
+router.post("/signup", signup)
+router.post("/login", login)
+router.put("/update-user/:id", updateUser)
+router.get("/loop", loop)
+router.put("/update-password/:id", updatePassword)
 router.post("/upload-pic", protect, upload.single("image"), uploadProfileImage)
-router.get("/api", protect, fetchUser)
-router.post("/api/verify-email", verifyEmail)
-router.post("/api/login", loginUser);
-router.post("/api/products", uploadProduct);
-router.post("/api/forgot-password", forgotPassword);
-router.post("/api/reset-password", resetPassword);
+router.get("/, protect", fetchUser)
+router.post("/verify-email", verifyEmail)
+router.post("/login", loginUser);
+router.post("/products", uploadProduct);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
+router.post("/admin/login", adminLogin);
+router.post("/admin/signup",adminSignup)
+
+
 
 router.post("/upload", (req, res) => {
     upload.single("image")(req, res, (err) => {
@@ -49,4 +53,4 @@ router.get("/test-cloudinary", async (req, res) => {
     }
 });
 
-module.exports = router
+module.exports = router;

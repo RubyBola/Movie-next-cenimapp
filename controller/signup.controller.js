@@ -1,4 +1,5 @@
 const User = require('../model/usermodel');
+const admin = require('../model/admin');
 const bcrypt = require('bcryptjs');
 const upload = require("../middleware/upload");
 const jwt = require("jsonwebtoken");
@@ -202,7 +203,6 @@ const signup = async (req, res) => {
       lastName,
       email,
       password,
-      accountNumber,
       verificationCode: code,
     });
 
@@ -216,13 +216,67 @@ const signup = async (req, res) => {
         <p>This code will expire soon.</p>
       `,
     });
+      console.log(`Verification code for ${email}: ${verificationCode}`);
 
-    res.status(200).send({ message: "User signed up successfully" });
+        res.status(201).json({ 
+            message: "User signed up successfully. Please verify your email.",
+            verificationCode: process.env.NODE_ENV === 'development' ? verificationCode : undefined
+        });
+
+    //res.status(200).send({ message: "User signed up successfully" });
   } catch (error) {
     console.error(error.message);
     res.status(500).send({ message: "Server error" });
   }
 };
+
+const adminSignup = async (req, res) => {
+  console.log("Admin signup request received with email:", req.body.email);
+
+  try {
+    const { firstName, lastName, email, password } = req.body;
+
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
+
+    if (existingUser) {
+      return res.status(400).json({ message: "Email has been used" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const code = generateCode();
+
+    const newAdmin = await User.create({
+      firstName,
+      lastName,
+      email: email.trim().toLowerCase(),
+      password: hashedPassword,
+      role: "admin",
+      verificationCode: code,
+    });
+
+    await sendEmail({
+      to: email,
+      subject: "Verify Your Account",
+      html: `<h2>${code}</h2>`,
+    });
+
+    console.log(`Verification code for ${email}: ${code}`);
+
+    res.status(201).json({
+      message: "Admin signed up successfully",
+      admin: newAdmin,
+    });
+
+  } catch (error) {
+    console.error("FULL ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -267,7 +321,51 @@ const loginUser = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+const adminLogin = async (req, res) => {
+  try {
+   const { email, password } = req.body;
+  
 
+    // Check if user exists
+    const admin = await User.findOne({ email });
+
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    // Check if user is admin
+    if (admin.role !== "admin") {
+      return res.status(403).json({ message: "Access denied. Not an admin." });
+    }
+
+    // Compare password
+    const isMatch = await bcrypt.compare(password, admin.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Generate token
+    const token = jwt.sign(
+      { id: admin._id, role: admin.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Admin login successful",
+      token,
+      admin: {
+        id: admin._id,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 const login = async (req, res) => {
     console.log(
@@ -292,7 +390,8 @@ const login = async (req, res) => {
         id: user._id,
         email: user.email,
         firstName: user.firstName,
-        lastName: user.lastName
+        lastName: user.lastName,
+        role:user.role
     }
 
     const token = jwt.sign(
@@ -300,7 +399,8 @@ const login = async (req, res) => {
             id: user._id,
             email: user.email,
             firstName: user.firstName,
-            lastName: user.lastName
+            lastName: user.lastName,
+            role:user.role
         },
         process.env.JWT_SECRET,
         { expiresIn: "31d" }
@@ -441,4 +541,4 @@ const fetchUser = async (req, res) => {
     } return user
 }
 
-module.exports = { signup, login, loop, updateUser, updatePassword, sleep, greet, uploadProfileImage, fetchUser,verifyEmail,loginUser,uploadProduct,forgotPassword,resetPassword}
+module.exports = { signup, login, loop, updateUser, updatePassword, sleep, greet, uploadProfileImage, fetchUser,verifyEmail,loginUser,uploadProduct,forgotPassword,resetPassword,adminSignup,adminLogin}

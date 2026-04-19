@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
   },
 
   password: { type: String, required: true },
+  
   accountNumber: { type: String },
   resetToken: {type: String},
   verificationCode: { type: String },
