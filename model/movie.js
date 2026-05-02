@@ -3,32 +3,46 @@ const mongoose = require('mongoose');
 const movieSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: true,
+        required: [true, 'Movie title is required'],
         trim: true
     },
     genre: {
         type: String,
-        required: true
+        required: [true, 'Genre is required']
     },
     duration: {
         type: String,
-        required: true
+        required: [true, 'Duration is required']
     },
     rating: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 10
+    },
+    language: {
         type: String,
-        default: '0'
+        default: 'English'
+    },
+    posterUrl: {
+        type: String,
+        default: ''
     },
     posterBg: {
         type: String,
         default: 'linear-gradient(135deg, #1f2937, #111827)'
     },
+    description: {
+        type: String,
+        default: ''
+    },
     showtimes: [{
         type: String,
         required: true
     }],
-    description: {
-        type: String,
-        default: ''
+    price: {
+        type: Number,
+        default: 12.5
     },
     releaseDate: {
         type: Date,
@@ -37,6 +51,10 @@ const movieSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }
 }, {
     timestamps: true

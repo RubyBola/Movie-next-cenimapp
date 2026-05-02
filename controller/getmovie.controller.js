@@ -1,6 +1,6 @@
 const Movie = require('../models/movie');
 const Booking = require('../models/booking');
-const User = require('../models/usermodel');
+const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';

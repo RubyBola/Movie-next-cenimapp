@@ -1,6 +1,6 @@
-const Movie = require('../models/movie');
-const Booking = require('../models/booking');
-const User = require('../models/user');
+const Movie = require('../model/movie');
+const Booking = require('../model/booking');
+const User = require('../model/usermodel');
 
 // Get all movies (admin)
 const getAllMovies = async (req, res) => {

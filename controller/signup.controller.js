@@ -1,5 +1,5 @@
 const User = require('../model/usermodel');
-const admin = require('../model/admin');
+const Admin = require('../model/admin');
 const bcrypt = require('bcryptjs');
 const upload = require("../middleware/upload");
 const jwt = require("jsonwebtoken");
@@ -27,7 +27,7 @@ const verifyEmail = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await Admin.findOne({ email });
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
@@ -231,8 +231,6 @@ const signup = async (req, res) => {
 };
 
 const adminSignup = async (req, res) => {
-  console.log("Admin signup request received with email:", req.body.email);
-
   try {
     const { firstName, lastName, email, password } = req.body;
 
@@ -240,43 +238,84 @@ const adminSignup = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
-
-    if (existingUser) {
-      return res.status(400).json({ message: "Email has been used" });
+    const existingAdmin = await Admin.findOne({ email });
+    if (existingAdmin) {
+      return res.status(400).json({ message: "Email already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
     const code = generateCode();
 
-    const newAdmin = await User.create({
+    const admin = await Admin.create({
       firstName,
       lastName,
-      email: email.trim().toLowerCase(),
-      password: hashedPassword,
-      role: "admin",
+      email,
+      password,
       verificationCode: code,
+      verificationCodeExpires: Date.now() + 10 * 60 * 1000 // 10 mins
     });
 
     await sendEmail({
       to: email,
-      subject: "Verify Your Account",
-      html: `<h2>${code}</h2>`,
+      subject: "Verify Your Admin Account",
+      html: `
+        <p>Hello ${firstName},</p>
+        <p>Your verification code is:</p>
+        <h2>${code}</h2>
+        <p>This code expires in 10 minutes.</p>
+      `
     });
 
-    console.log(`Verification code for ${email}: ${code}`);
-
     res.status(201).json({
-      message: "Admin signed up successfully",
-      admin: newAdmin,
+      message: "Admin created. Check email for OTP."
     });
 
   } catch (error) {
-    console.error("FULL ERROR:", error);
+    console.log(error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
+const verifyAdminEmail = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    const admin = await Admin.findOne({ email });
+
+    if (!admin) {
+      return res.status(400).json({ message: "Admin not found" });
+    }
+
+    if (admin.isVerified) {
+      return res.status(400).json({ message: "Already verified" });
+    }
+
+    if (
+      !admin.verificationCode ||
+      admin.verificationCode.toString() !== otp.toString()
+    ) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    if (
+      admin.verificationCodeExpires &&
+      admin.verificationCodeExpires < Date.now()
+    ) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    admin.isVerified = true;
+    admin.verificationCode = null;
+    admin.verificationCodeExpires = null;
+
+    await admin.save();
+
+    res.json({ message: "Email verified successfully" });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -323,29 +362,24 @@ const loginUser = async (req, res) => {
 };
 const adminLogin = async (req, res) => {
   try {
-   const { email, password } = req.body;
-  
+    const { email, password } = req.body;
 
-    // Check if user exists
-    const admin = await User.findOne({ email });
+    const admin = await Admin.findOne({ email });
 
     if (!admin) {
       return res.status(404).json({ message: "Admin not found" });
     }
 
-    // Check if user is admin
-    if (admin.role !== "admin") {
-      return res.status(403).json({ message: "Access denied. Not an admin." });
+    if (!admin.isVerified) {
+      return res.status(400).json({ message: "Please verify your email first" });
     }
 
-    // Compare password
-    const isMatch = await bcrypt.compare(password, admin.password);
+    const isMatch = await admin.comparePassword(password);
 
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Generate token
     const token = jwt.sign(
       { id: admin._id, role: admin.role },
       process.env.JWT_SECRET,
@@ -353,7 +387,7 @@ const adminLogin = async (req, res) => {
     );
 
     res.json({
-      message: "Admin login successful",
+      message: "Login successful",
       token,
       admin: {
         id: admin._id,
@@ -363,7 +397,8 @@ const adminLogin = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -541,4 +576,4 @@ const fetchUser = async (req, res) => {
     } return user
 }
 
-module.exports = { signup, login, loop, updateUser, updatePassword, sleep, greet, uploadProfileImage, fetchUser,verifyEmail,loginUser,uploadProduct,forgotPassword,resetPassword,adminSignup,adminLogin}
+module.exports = { signup, login, loop, updateUser, updatePassword, sleep, greet, uploadProfileImage, fetchUser,verifyEmail,verifyAdminEmail,loginUser,uploadProduct,forgotPassword,resetPassword,adminSignup,adminLogin}
