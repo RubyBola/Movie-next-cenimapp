@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const { generateCode } = require("../utils/code");
 const sendEmail= require("../utils/sendEmail");
 const Product = require("../model/product.model");
+const Booking = require('../model/booking');
 
 const user = { name: "John Doe", email: "boluwa@gmail.com:", password: "password123" }
 const user1 = { name: "John Doe 1", email: "boluwa@gmail11.com:", password: "password222123" }
@@ -27,7 +28,7 @@ const verifyEmail = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const user = await Admin.findOne({ email });
+    const user = await User.findOne({ email });
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
@@ -37,32 +38,34 @@ const verifyEmail = async (req, res) => {
       return res.status(400).json({ message: "Already verified" });
     }
 
-    if (user.verificationCode !== otp) {
+    if (
+      !user.verificationCode ||
+      user.verificationCode.toString() !== otp.toString()
+    ) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    if (user.verificationCodeExpires && user.verificationCodeExpires < Date.now()) {
+    if (
+      user.verificationCodeExpires &&
+      user.verificationCodeExpires < Date.now()
+    ) {
       return res.status(400).json({ message: "OTP expired" });
     }
 
-    // ✅ Mark as verified
     user.isVerified = true;
     user.verificationCode = null;
-    if (user.verificationCodeExpires){
-      user.verificationCodeExpires = null;
-
-    }
-    
+    user.verificationCodeExpires = null;
 
     await user.save();
 
-    res.json({ message: "Email verified successfully ✅" });
+    res.json({ message: "Email verified successfully" });
 
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ message: "Server error" });
   }
 };
+
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -187,48 +190,86 @@ const signup = async (req, res) => {
     const { firstName, lastName, email, password } = req.body;
 
     if (!firstName || !lastName || !email || !password) {
-      return res.status(400).send({ message: "All fields are required" });
+      return res.status(400).json({ message: "All fields are required" });
     }
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).send({ message: "Email has been used" });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already exists" });
     }
 
-    const accountNumber = generateAccountNumber(); // ✅ FIXED
     const code = generateCode();
 
-    await User.create({
+    const user = await User.create({
       firstName,
       lastName,
       email,
       password,
       verificationCode: code,
+      verificationCodeExpires: Date.now() + 10 * 60 * 1000 // 10 mins
     });
 
     await sendEmail({
       to: email,
-      subject: "Verify Your Account",
+      subject: "Verify Your User Account",
       html: `
         <p>Hello ${firstName},</p>
         <p>Your verification code is:</p>
         <h2>${code}</h2>
-        <p>This code will expire soon.</p>
-      `,
+        <p>This code expires in 10 minutes.</p>
+      `
     });
-      console.log(`Verification code for ${email}: ${verificationCode}`);
 
-        res.status(201).json({ 
-            message: "User signed up successfully. Please verify your email.",
-            verificationCode: process.env.NODE_ENV === 'development' ? verificationCode : undefined
-        });
+    res.status(201).json({
+      message: "User created. Check email for OTP."
+    });
 
-    //res.status(200).send({ message: "User signed up successfully" });
   } catch (error) {
-    console.error(error.message);
-    res.status(500).send({ message: "Server error" });
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
   }
 };
+// const verifyUserEmail = async (req, res) => {
+//   try {
+//     const { email, otp } = req.body;
+
+//     const user = await User.findOne({ email });
+
+//     if (!user) {
+//       return res.status(400).json({ message: "User not found" });
+//     }
+
+//     if (user.isVerified) {
+//       return res.status(400).json({ message: "Already verified" });
+//     }
+
+//     if (
+//       !user.verificationCode ||
+//       user.verificationCode.toString() !== otp.toString()
+//     ) {
+//       return res.status(400).json({ message: "Invalid OTP" });
+//     }
+
+//     if (
+//       user.verificationCodeExpires &&
+//       user.verificationCodeExpires < Date.now()
+//     ) {
+//       return res.status(400).json({ message: "OTP expired" });
+//     }
+
+//     user.isVerified = true;
+//     user.verificationCode = null;
+//     user.verificationCodeExpires = null;
+
+//     await user.save();
+
+//     res.json({ message: "Email verified successfully" });
+
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
 const adminSignup = async (req, res) => {
   try {
@@ -360,6 +401,7 @@ const loginUser = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -576,4 +618,4 @@ const fetchUser = async (req, res) => {
     } return user
 }
 
-module.exports = { signup, login, loop, updateUser, updatePassword, sleep, greet, uploadProfileImage, fetchUser,verifyEmail,verifyAdminEmail,loginUser,uploadProduct,forgotPassword,resetPassword,adminSignup,adminLogin}
+module.exports = { signup, login, loop, updateUser, updatePassword, sleep, greet, uploadProfileImage, fetchUser,verifyAdminEmail,loginUser,uploadProduct,forgotPassword,resetPassword,adminSignup,adminLogin,verifyEmail}

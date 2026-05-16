@@ -3,8 +3,12 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
+  firstName: { 
+    type: String, 
+    required: true },
+  lastName: { 
+    type: String, 
+    required: true },
 
   email: {
     type: String,
@@ -28,33 +32,33 @@ userSchema.pre("save", async function () {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-const productSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-    },
+// const productSchema = new mongoose.Schema(
+//   {
+//     name: {
+//       type: String,
+//       required: true,
+//     },
 
-    price: {
-      type: Number,
-      required: true,
-    },
+//     price: {
+//       type: Number,
+//       required: true,
+//     },
 
-    description: {
-      type: String,
-    },
+//     description: {
+//       type: String,
+//     },
 
-    image: {
-      type: String, // URL or file path
-    },
+//     image: {
+//       type: String, // URL or file path
+//     },
 
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-  },
-  { timestamps: true }
-);
+//     user: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "User",
+//     },
+//   },
+//   { timestamps: true }
+// );
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;

@@ -12,11 +12,11 @@ const { getAllMovies, addMovie, deleteMovie, updateMovie, getAllBookings } = req
 router.post("/login", adminLogin);
 router.post("/verify-email", verifyEmail);
 router.post("/signup",adminSignup)
-router.post("/getallmovies",getAllMovies)
+router.put("/getallmovies",getAllMovies)
 router.post("/getmovies",getMovies)
 router.post("/addmovies",addMovie)
-router.post("/deletemovie",deleteMovie)
-router.post("/updatemovies",updateMovie)
+router.delete("/deletemovie/:id",deleteMovie)
+router.put("/updatemovies/:id",updateMovie)
 router.post("/getallbookings",getAllBookings)
 
 

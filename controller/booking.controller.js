@@ -2,11 +2,13 @@ const Movie = require('../model/movie');
 const Booking = require('../model/booking');
 const User = require('../model/usermodel');
 const jwt = require('jsonwebtoken');
+const { signup } = require('./signup.controller');
+const mongoose = require('mongoose');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
-// User registration
-const register = async (req, res) => {
+//User Signup
+const Signup = async (req, res) => {
     try {
         const { name, email, password } = req.body;
         
@@ -30,8 +32,8 @@ const register = async (req, res) => {
     }
 };
 
-// User login
-const login = async (req, res) => {
+//User Login
+const Login = async (req, res) => {
     try {
         const { email, password } = req.body;
         
@@ -55,7 +57,7 @@ const login = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
-};
+};  
 
 // Get all active movies (user view)
 const getMovies = async (req, res) => {
@@ -83,48 +85,88 @@ const getMovieById = async (req, res) => {
 
 // Create booking
 const createBooking = async (req, res) => {
-    try {
-        const { movieId, showtime, date, seats } = req.body;
-        const userId = req.userId;
-        
-        const movie = await Movie.findById(movieId);
-        if (!movie) {
-            return res.status(404).json({ error: 'Movie not found' });
-        }
-        
-        // Check if seats are already booked
-        const existingBookings = await Booking.find({
-            movieId,
-            showtime,
-            date,
-            seats: { $in: seats }
-        });
-        
-        if (existingBookings.length > 0) {
-            return res.status(400).json({ error: 'Some seats are already booked' });
-        }
-        
-        const totalPrice = seats.length * 12.5;
-        
-        const booking = new Booking({
-            movieId,
-            userId,
-            showtime,
-            date,
-            seats,
-            totalPrice
-        });
-        
-        await booking.save();
-        
-        res.status(201).json({
-            success: true,
-            booking,
-            message: `Booked ${seats.length} seat(s) successfully`
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+console.log(req.user);
+  try {
+
+    const {
+      movie,
+      showtime,
+      bookingDate,
+      seats,
+      paymentMethod,
+    } = req.body;
+
+
+    // Validate fields
+    if (
+      !movie ||
+      !showtime ||
+      !bookingDate ||
+      !seats
+    ) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
     }
+
+
+    // Validate movie ID
+    if (!mongoose.Types.ObjectId.isValid(movie)) {
+
+      return res.status(400).json({
+        message: "Invalid movie ID",
+      });
+    }
+
+
+    // Find movie
+    const foundMovie = await Movie.findById(movie);
+
+    if (!foundMovie) {
+
+      return res.status(404).json({
+        message: "Movie not found",
+      });
+    }
+
+
+    // Calculate total price
+    const totalPrice =
+      foundMovie.price * seats.length;
+
+
+    // Create booking
+    const booking = await Booking.create({
+
+      user: req.user.id,
+
+      movie,
+
+      showtime,
+
+      bookingDate,
+
+      seats,
+
+      paymentMethod,
+
+      totalPrice,
+    });
+
+
+    res.status(201).json({
+
+      message: "Booking successful 🎉",
+
+      booking,
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message,
+    });
+  }
 };
 
 // Get user's bookings
@@ -179,4 +221,4 @@ const getBookedSeats = async (req, res) => {
     }
 };
 
-module.exports = {register,login,getMovies,getMovieById,createBooking,getUserBookings,cancelBooking,getBookedSeats};
+module.exports = {getMovies,getMovieById,createBooking,getUserBookings,cancelBooking,getBookedSeats,Signup,Login};

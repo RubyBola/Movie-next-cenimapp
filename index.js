@@ -15,9 +15,11 @@ app.use(express.urlencoded({ extended: true }))
 
 const userRoutes = require('./routes/user.routes')
 const adminRoutes = require('./routes/admin.routes')
+const bookingRoutes = require('./routes/booking.routes')
 
 app.use('/api', userRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/booking', bookingRoutes)
 
 // app.get('/', (req, res) => {
 //     res.json({ message: "Welcome to our first API call" })
