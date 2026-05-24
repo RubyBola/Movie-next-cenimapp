@@ -1,54 +1,119 @@
-const uploadProduct = async (req, res) => {
-  res.json({ message: "Product uploaded" });
+const Product = require("../model/product");
+const user = require("../model/usermodel");
+const cloudinary = require("../config/cloudinary");
+const upload = require("../middleware/upload");
 
-    console.log('Request body:', req.body);
-    console.log('Headers:', req.headers);
-    
-    const { name, price } = req.body;
-    
-    if (!name || !price) {
-        console.log('Missing fields - name:', name, 'price:', price);
-        return res.status(400).json({ 
-            message: "Name and price are required" 
-        });
-    }
-  
-};
-const Product = require('../models/product');
+
+// const createProduct = async (req, res) => {
+
+//     try {
+
+//         const {
+//             name,
+//             price,
+//             description
+//         } = req.body;
+
+//         // Upload image to cloudinary
+//         const result =
+//             await cloudinary.uploader.upload(
+//                 req.file.path
+//             );
+
+//         const product =
+//             await Product.create({
+
+//                 name,
+
+//                 price,
+
+//                 description,
+
+//                 image: result.secure_url,
+
+//                 user: req.user.id
+//             });
+
+//         res.status(201).json({
+
+//             message:
+//                 "Product created successfully",
+
+//             product
+//         });
+
+//     } catch (error) {
+
+//         res.status(500).json({
+//             error: error.message
+//         });
+//     }
+// };
 
 // Create a new product
-const createProduct = async (req, res) => {
-    try {
-        const { name, price, description, category, stock, imageUrl } = req.body;
 
-        if (!name || !price) {
+const createProduct = async (req, res) => {
+
+    console.log(req.body);
+    console.log(req.file);
+
+    try {
+
+        // Check image upload first
+        if (!req.file) {
+
             return res.status(400).json({
-                success: false,
-                message: "Name and price are required"
+                message: "Please upload an image"
             });
         }
 
-        const product = new Product({
+        const {
             name,
             price,
-            description: description || '',
-            category: category || 'food',
-            stock: stock || 0,
-            imageUrl: imageUrl || ''
-        });
+            description
+        } = req.body;
 
-        await product.save();
+        // Validate fields
+        if (!name || !price) {
+
+            return res.status(400).json({
+                message:
+                    "Name and price are required"
+            });
+        }
+
+        // Upload image to cloudinary
+        const result =
+            await cloudinary.uploader.upload(
+                req.file.path
+            );
+
+        // Create product
+        const product =
+            await Product.create({
+
+                name,
+
+                price,
+
+                description,
+
+                image: result.secure_url,
+
+                user: req.user._id
+            });
 
         res.status(201).json({
-            success: true,
-            message: "Product created successfully",
+
+            message:
+                "Product created successfully",
+
             product
         });
+
     } catch (error) {
-        console.error("Create product error:", error);
+
         res.status(500).json({
-            success: false,
-            message: "Server error",
             error: error.message
         });
     }
@@ -195,4 +260,4 @@ const updateProductStock = async (req, res) => {
         });
     }
 };
-module.exports = { createProduct,getAllProducts, getProductById, updateProduct,deleteProduct, updateProductStock, uploadProduct };
+module.exports = { createProduct,getAllProducts, getProductById, updateProduct,deleteProduct, updateProductStock};

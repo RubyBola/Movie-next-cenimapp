@@ -10,7 +10,7 @@ const { getAllMovies, addMovie, deleteMovie, updateMovie, getAllBookings } = req
 
 
 router.post("/login", adminLogin);
-router.post("/verify-email", verifyEmail);
+router.post("/verifyemail", verifyEmail);
 router.post("/signup",adminSignup)
 router.put("/getallmovies",getAllMovies)
 router.post("/getmovies",getMovies)

@@ -90,6 +90,7 @@ console.log(req.user);
 
     const {
       movie,
+      products,
       showtime,
       bookingDate,
       seats,
@@ -102,7 +103,9 @@ console.log(req.user);
       !movie ||
       !showtime ||
       !bookingDate ||
-      !seats
+      !seats ||
+      !products ||
+      !paymentMethod 
     ) {
       return res.status(400).json({
         message: "All fields are required",
@@ -133,26 +136,34 @@ console.log(req.user);
     // Calculate total price
     const totalPrice =
       foundMovie.price * seats.length;
+   // Generate booking reference
+const bookingReference =
+  "CIN" +
+  Date.now() +
+  Math.floor(Math.random() * 1000);
 
 
-    // Create booking
-    const booking = await Booking.create({
+// Create booking
+const booking = await Booking.create({
 
-      user: req.user.id,
+  bookingReference,
 
-      movie,
+  user: req.user.id,
 
-      showtime,
+  movie,
 
-      bookingDate,
+  showtime,
 
-      seats,
+  products,
 
-      paymentMethod,
+  bookingDate,
 
-      totalPrice,
-    });
+  seats,
 
+  paymentMethod,
+
+  totalPrice,
+});
 
     res.status(201).json({
 
@@ -171,54 +182,154 @@ console.log(req.user);
 
 // Get user's bookings
 const getUserBookings = async (req, res) => {
+
     try {
-        const bookings = await Booking.find({ userId: req.userId })
-            .populate('movieId', 'title posterBg')
-            .sort({ createdAt: -1 });
-        
-        res.json({ success: true, bookings });
+
+        // Find bookings belonging to logged-in user
+        const bookings = await Booking.find({
+
+            user: req.user.id
+
+        })
+
+        // Populate movie details
+        .populate("movie")
+
+        // Latest first
+        .sort({ createdAt: -1 });
+
+
+        res.status(200).json({
+
+            message: "Bookings fetched successfully",
+
+            totalBookings: bookings.length,
+
+            bookings
+        });
+
     } catch (error) {
-        res.status(500).json({ error: error.message });
+
+        res.status(500).json({
+            error: error.message
+        });
     }
 };
 
 // Cancel booking
 const cancelBooking = async (req, res) => {
+
     try {
+
         const { id } = req.params;
-        
-        const booking = await Booking.findOne({ _id: id, userId: req.userId });
-        if (!booking) {
-            return res.status(404).json({ error: 'Booking not found' });
+
+        // Validate booking ID
+        if (
+            !mongoose.Types.ObjectId.isValid(id)
+        ) {
+
+            return res.status(400).json({
+                message: "Invalid booking ID"
+            });
         }
-        
-        booking.status = 'cancelled';
+
+        // Find booking
+        const booking =
+            await Booking.findById(id);
+
+        if (!booking) {
+
+            return res.status(404).json({
+                message: "Booking not found"
+            });
+        }
+
+        // Ensure booking belongs to logged in user
+        if (
+            booking.user.toString() !==
+            req.user.id
+        ) {
+
+            return res.status(403).json({
+                message: "Access denied"
+            });
+        }
+
+        // Cancel booking
+        booking.status = "cancelled";
+
         await booking.save();
-        
-        res.json({ success: true, message: 'Booking cancelled successfully' });
+
+        res.status(200).json({
+
+            message:
+                "Booking cancelled successfully",
+
+            booking
+        });
+
     } catch (error) {
-        res.status(500).json({ error: error.message });
+
+        res.status(500).json({
+            error: error.message
+        });
     }
 };
 
 // Get booked seats for a show
 const getBookedSeats = async (req, res) => {
+
     try {
-        const { movieId, showtime, date } = req.query;
-        
+
+        const { movieId } = req.params;
+
+        // Validate movie ID
+        if (
+            !mongoose.Types.ObjectId.isValid(movieId)
+        ) {
+
+            return res.status(400).json({
+                message: "Invalid movie ID"
+            });
+        }
+
+        // Find confirmed bookings
         const bookings = await Booking.find({
-            movieId,
-            showtime,
-            date,
-            status: 'confirmed'
+
+            movie: movieId,
+
+            status: "confirmed"
         });
-        
-        const bookedSeats = bookings.flatMap(b => b.seats);
-        
-        res.json({ success: true, bookedSeats });
+
+        // Extract all booked seats
+        let bookedSeats = [];
+
+        bookings.forEach((booking) => {
+
+            booking.seats.forEach((seat) => {
+
+                bookedSeats.push(seat);
+            });
+        });
+
+        res.status(200).json({
+
+            message:
+                "Booked seats fetched successfully",
+
+            totalBookedSeats:
+                bookedSeats.length,
+
+            bookedSeats
+        });
+
     } catch (error) {
-        res.status(500).json({ error: error.message });
+
+        res.status(500).json({
+            error: error.message
+        });
     }
 };
+
 
 module.exports = {getMovies,getMovieById,createBooking,getUserBookings,cancelBooking,getBookedSeats,Signup,Login};

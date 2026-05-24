@@ -5,7 +5,7 @@ const upload = require("../middleware/upload");
 const jwt = require("jsonwebtoken");
 const { generateCode } = require("../utils/code");
 const sendEmail= require("../utils/sendEmail");
-const Product = require("../model/product.model");
+const Product = require("../model/product");
 const Booking = require('../model/booking');
 
 const user = { name: "John Doe", email: "boluwa@gmail.com:", password: "password123" }

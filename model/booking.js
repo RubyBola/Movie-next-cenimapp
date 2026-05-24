@@ -11,6 +11,19 @@ const bookingSchema = new mongoose.Schema({
         ref: 'Movie',
         required: true
     },
+    products: [
+   {
+      product: {
+         type: mongoose.Schema.Types.ObjectId,
+         ref: "Product"
+      },
+
+      quantity: {
+         type: Number,
+         default: 1
+      }
+   }
+],
     showtime: {
         type: String,
         required: true
@@ -28,30 +41,32 @@ const bookingSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    paymentMethod: {
+        type: String,
+        enum: ['card', 'cash', 'paystack', 'paypal'],
+        default: 'card'
+    },
     status: {
         type: String,
         enum: ['pending', 'confirmed', 'cancelled', 'completed'],
         default: 'confirmed'
     },
-    paymentMethod: {
-        type: String,
-        enum: ['card', 'cash', 'online'],
-        default: 'card'
-    },
+    
     bookingReference: {
         type: String,
-        unique: true
+        unique: true,
+        required: true
     }
 }, {
     timestamps: true
 });
 
 // Generate booking reference before saving
-bookingSchema.pre('save', async function(next) {
-    if (!this.bookingReference) {
-        this.bookingReference = 'CIN' + Date.now() + Math.floor(Math.random() * 1000);
-    }
-    next();
-});
+// bookingSchema.pre('save', async function(next) {
+//     if (!this.bookingReference) {
+//         this.bookingReference = 'CIN' + Date.now() + Math.floor(Math.random() * 1000);
+//     }
+//     next();
+// });
 
 module.exports = mongoose.model('Booking', bookingSchema);
