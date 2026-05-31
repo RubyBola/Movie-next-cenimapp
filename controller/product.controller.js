@@ -113,6 +113,8 @@ const createProduct = async (req, res) => {
 
     } catch (error) {
 
+        console.log("FULL ERROR:", error);
+
         res.status(500).json({
             error: error.message
         });

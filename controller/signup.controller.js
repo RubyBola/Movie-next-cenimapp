@@ -272,6 +272,7 @@ const signup = async (req, res) => {
 // };
 
 const adminSignup = async (req, res) => {
+  console.log("Admin signup request received with email:", req.body.email);
   try {
     const { firstName, lastName, email, password } = req.body;
 
@@ -296,7 +297,7 @@ const adminSignup = async (req, res) => {
     });
 
     await sendEmail({
-      to: email,
+      to: admin.email,
       subject: "Verify Your Admin Account",
       html: `
         <p>Hello ${firstName},</p>
