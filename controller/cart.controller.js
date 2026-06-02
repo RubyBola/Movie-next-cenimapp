@@ -1,4 +1,10 @@
 const Cart = require("../model/cart");
+const mongoose = require("mongoose");
+const Product = require("../model/product");
+const User = require("../model/usermodel");
+const admin = require("../model/admin");
+const jwt = require("jsonwebtoken");
+const movie = require("../model/movie");
 
 const addToCart = async (req, res) => {
 
@@ -7,7 +13,9 @@ const addToCart = async (req, res) => {
         const {
             movie,
             seats,
-            products
+            products,   
+            bookingDate,
+            showtime
         } = req.body;
 
         let cart =
@@ -26,7 +34,11 @@ const addToCart = async (req, res) => {
 
                 seats,
 
-                products
+                products,
+
+                bookingDate,
+
+                showtime
             });
 
         } else {

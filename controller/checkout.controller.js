@@ -1,21 +1,19 @@
 const Cart = require("../model/cart");
-
 const Booking = require("../model/booking");
-
 const Movie = require("../model/movie");
-
 const Product = require("../model/product");
 
 const checkout = async (req, res) => {
-
     try {
-
         // Find user's cart
         const cart = await Cart.findOne({
-
             user: req.user.id
 
         });
+        console.log("CHECKOUT CONTROLLER HIT");
+        console.log("Cart:", cart);
+        console.log("Showtime:", cart.showtime);
+        console.log("BookingDate:", cart.bookingDate);
 
         // Check if cart exists
         if (!cart) {
@@ -33,7 +31,7 @@ const checkout = async (req, res) => {
 
             return res.status(404).json({
                 message: "Movie not found"
-            });
+            })
         }
 
         // Movie ticket total
@@ -70,27 +68,30 @@ const checkout = async (req, res) => {
             Math.floor(Math.random() * 1000);
 
         // Create booking
-        const booking =
-            await Booking.create({
+        const { paymentMethod } = req.body;
 
-                bookingReference,
+        const booking = await Booking.create({
 
-                user: req.user.id,
+           bookingReference,
 
-                movie: cart.movie,
+           user: req.user.id,
 
-                seats: cart.seats,
+           movie: cart.movie,
+ 
+           showtime: cart.showtime,
 
-                products: cart.products,
+           bookingDate: cart.bookingDate,
 
-                totalPrice,
+           seats: cart.seats,
 
-                paymentMethod: "cash,card, paystack, paypal",
+           products: cart.products,
 
-                paymentStatus: "completed",
-            });
+           totalPrice,
 
-        // Clear cart
+           paymentMethod,
+
+           paymentStatus: "completed"
+});
         await Cart.deleteOne({
 
             user: req.user.id
@@ -106,6 +107,8 @@ const checkout = async (req, res) => {
 
     } catch (error) {
 
+        console.log("FULL ERROR:");
+        console.log(error);
         res.status(500).json({
             error: error.message
         });

@@ -1,10 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const protect = require("../middleware/auth");
-const {checkout} = require("../controller/checkout.controller");
+const {addToCart} = require("../controller/cart.controller");
 
-
-// Checkout
-router.post("/",protect, checkout);
+router.post("/", protect,addToCart);
 
 module.exports = router;

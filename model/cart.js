@@ -13,6 +13,14 @@ const cartSchema = new mongoose.Schema({
         ref: "Movie"
     },
 
+    showtime: {
+        type: String
+    },
+
+    bookingDate: {
+        type: Date
+    },
+
     seats: [
         {
             row: Number,
@@ -38,6 +46,4 @@ const cartSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-
-module.exports =
-   mongoose.model("Cart", cartSchema);
+module.exports =  mongoose.model("Cart", cartSchema);

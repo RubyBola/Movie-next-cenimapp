@@ -18,12 +18,14 @@ const adminRoutes = require('./routes/admin.routes')
 const bookingRoutes = require('./routes/booking.routes')
 const productRoutes = require('./routes/product.routes')
 const checkoutRoutes = require('./routes/checkout.routes')
+const cartRoutes = require('./routes/cart.routes')
 
 app.use('/api', userRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/booking', bookingRoutes)
 app.use('/api/product', productRoutes)
 app.use('/api/checkout', checkoutRoutes)
+app.use('/api/cart', cartRoutes)
 
 // app.get('/', (req, res) => {
 //     res.json({ message: "Welcome to our first API call" })

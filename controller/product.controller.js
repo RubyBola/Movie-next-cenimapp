@@ -2,6 +2,7 @@ const Product = require("../model/product");
 const user = require("../model/usermodel");
 const cloudinary = require("../config/cloudinary");
 const upload = require("../middleware/upload");
+const mongoose = require("mongoose");
 
 
 // const createProduct = async (req, res) => {
@@ -143,21 +144,34 @@ const getAllProducts = async (req, res) => {
 // Get single product by ID
 const getProductById = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id);
-        
+
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid product ID"
+            });
+        }
+
+        const product = await Product.findById(id);
+
         if (!product) {
             return res.status(404).json({
                 success: false,
                 message: "Product not found"
             });
         }
-        
+
         res.json({
             success: true,
             product
         });
+
     } catch (error) {
+
         console.error("Get product error:", error);
+
         res.status(500).json({
             success: false,
             message: "Server error"
@@ -168,36 +182,46 @@ const getProductById = async (req, res) => {
 // Update product
 const updateProduct = async (req, res) => {
     try {
+
         const { id } = req.params;
-        const updates = req.body;
-        
-        const product = await Product.findByIdAndUpdate(
-            id,
-            updates,
-            { new: true, runValidators: true }
-        );
-        
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid product ID"
+            });
+        }
+
+        const product = await Product.findById(id);
+
         if (!product) {
             return res.status(404).json({
                 success: false,
                 message: "Product not found"
             });
         }
-        
+
+        product.name = req.body.name || product.name;
+        product.price = req.body.price || product.price;
+        product.description = req.body.description || product.description;
+
+        const updatedProduct = await product.save();
+
         res.json({
             success: true,
-            message: "Product updated successfully",
-            product
+            product: updatedProduct
         });
+
     } catch (error) {
-        console.error("Update product error:", error);
+
+        console.error(error);
+
         res.status(500).json({
             success: false,
             message: "Server error"
         });
     }
 };
-
 // Delete product
 const deleteProduct = async (req, res) => {
     try {
