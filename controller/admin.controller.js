@@ -24,7 +24,8 @@ const addMovie = async (req, res) => {
             rating,
             posterBg,
             showtimes: showtimes.split(',').map(s => s.trim()),
-            description
+            description,
+            createdby: req.admin.id
         });
         
         await movie.save();

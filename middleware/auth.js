@@ -1,15 +1,9 @@
 const jwt = require("jsonwebtoken");
-
-const User =
-   require("../model/usermodel");
-
-const admin =
-   require("../model/admin");
+const User = require("../model/usermodel");
+const Admin =require("../model/admin");
 
 const protect = async (req, res, next) => {
-
     try {
-
         const authHeader =
             req.headers.authorization;
 
@@ -45,6 +39,14 @@ const protect = async (req, res, next) => {
             user =
                 await admin.findById(decoded.id)
                     .select("-password");
+                    console.log("USER RESULT:", user);
+
+if (!user) {
+    user = await admin.findById(decoded.id)
+        .select("-password");
+
+    console.log("ADMIN RESULT:", user);
+}
         }
 
         // If still not found

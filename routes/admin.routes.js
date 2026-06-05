@@ -1,5 +1,5 @@
 const express = require("express")
-const {adminLogin, adminSignup, verifyEmail} = require("../controller/signup.controller");
+const {adminLogin, adminSignup, verifyEmail, verifyAdminEmail} = require("../controller/signup.controller");
 const upload = require("../middleware/upload");
 const protect = require("../middleware/auth")
 const router = express.Router()
@@ -9,15 +9,14 @@ const { getAllMovies, addMovie, deleteMovie, updateMovie, getAllBookings } = req
 
 
 
-router.post("/login", adminLogin);
-router.post("/verifyemail", verifyEmail);
+router.post("/login",adminLogin);
+router.post("/verify-Email",verifyAdminEmail);
 router.post("/signup",adminSignup)
-router.put("/getallmovies",getAllMovies)
-router.post("/getmovies",getMovies)
-router.post("/addmovies",addMovie)
-router.delete("/deletemovie/:id",deleteMovie)
-router.put("/updatemovies/:id",updateMovie)
-router.post("/getallbookings",getAllBookings)
+router.put("/getallmovies",protect,getAllMovies)
+router.post("/getmovies",protect,getMovies)
+router.post("/addmovies",protect,addMovie)
+router.delete("/deletemovie/:id",protect,deleteMovie)
+router.put("/updatemovies/:id",protect,updateMovie)
 
 
 

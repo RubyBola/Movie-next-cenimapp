@@ -13,7 +13,7 @@ const booking = require("../model/booking");
 // router.post("/Login",Login);
 // router.post("/verify-email", verifyEmail);
 // router.post("/Signup",Signup)
-router.get("/getmovie/:id",getMovieById)
+router.get("/getmovie/:id",protect,getMovieById)
 router.post("/",protect,createBooking)
 router.get("/getUserBookings",protect,getUserBookings)
 router.delete("/cancel-Booking/:id",protect,cancelBooking)

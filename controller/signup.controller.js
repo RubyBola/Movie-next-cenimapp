@@ -320,7 +320,8 @@ const adminSignup = async (req, res) => {
 const verifyAdminEmail = async (req, res) => {
   try {
     const { email, otp } = req.body;
-
+    console.log("VERIFY EMAIL HIT");
+    console.log(req.body);
     const admin = await Admin.findOne({ email });
 
     if (!admin) {
@@ -423,7 +424,7 @@ const adminLogin = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign(
+    const otp = jwt.sign(
       { id: admin._id, role: admin.role },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
@@ -431,7 +432,7 @@ const adminLogin = async (req, res) => {
 
     res.json({
       message: "Login successful",
-      token,
+      otp,
       admin: {
         id: admin._id,
         email: admin.email,

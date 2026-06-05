@@ -50,6 +50,10 @@ const addToCart = async (req, res) => {
 
             cart.products = products;
 
+            cart.bookingDate = bookingDate;
+
+            cart.showtime = showtime;   
+
             await cart.save();
         }
 

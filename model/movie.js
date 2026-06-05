@@ -55,7 +55,13 @@ const movieSchema = new mongoose.Schema({
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
+    },
+    createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Admin"
     }
+
+
 }, {
     timestamps: true
 });
