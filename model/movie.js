@@ -15,34 +15,35 @@ const movieSchema = new mongoose.Schema({
         required: [true, 'Duration is required']
     },
     rating: {
-        type: Number,
+        type: String,
+        required:true,
         default: 0,
         min: 0,
         max: 10
     },
     language: {
         type: String,
-        default: 'English'
+        required: [true, 'Language is required'],
     },
-    posterUrl: {
-        type: String,
-        default: ''
-    },
-    posterBg: {
-        type: String,
-        default: 'linear-gradient(135deg, #1f2937, #111827)'
-    },
-    description: {
-        type: String,
-        default: ''
-    },
+    // posterUrl: {
+    //     type: String,
+    //     default: ''
+    // },
+    // posterBg: {
+    //     type: String,
+    //     default: 'linear-gradient(135deg, #1f2937, #111827)'
+    // },
+    // description: {
+    //     type: String,
+    //     default: ''
+    // },
     showtimes: [{
         type: String,
         required: true
     }],
     price: {
         type: Number,
-        default: 12.5
+        required: [true, 'Price is required']  
     },
     releaseDate: {
         type: Date,

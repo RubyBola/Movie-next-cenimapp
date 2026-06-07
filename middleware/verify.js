@@ -3,10 +3,4 @@ const decoded = jwt.verify(
    process.env.JWT_SECRET
 );
 
-
-
-
-
-
-
 module.exports = decoded;

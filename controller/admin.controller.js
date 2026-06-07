@@ -1,6 +1,6 @@
 const Movie = require('../model/movie');
 const Booking = require('../model/booking');
-const User = require('../model/usermodel');
+const Admin = require('../model/admin');
 
 // Get all movies (admin)
 const getAllMovies = async (req, res) => {
@@ -15,17 +15,18 @@ const getAllMovies = async (req, res) => {
 // Add new movie
 const addMovie = async (req, res) => {
     try {
-        const { title, genre, duration, rating, posterBg, showtimes, description } = req.body;
-        
+        const { title, genre, duration, rating, price, language, showtimes } = req.body;
+        console.log("REQ.ADMIN:", req.admin);
+
         const movie = new Movie({
             title,
             genre,
             duration,
             rating,
-            posterBg,
+            price,
+            language,
             showtimes: showtimes.split(',').map(s => s.trim()),
-            description,
-            createdby: req.admin.id
+            createdby: req.admin._id
         });
         
         await movie.save();
@@ -44,8 +45,7 @@ const updateMovie = async (req, res) => {
         if (updates.showtimes && typeof updates.showtimes === 'string') {
             updates.showtimes = updates.showtimes.split(',').map(s => s.trim());
         }
-        
-        const movie = await Movie.findByIdAndUpdate(id, updates, { new: true });
+        const movie = await Movie.findByIdAndUpdate( id, updates, { returnDocument: "after", runValidators: true });
         if (!movie) {
             return res.status(404).json({ error: 'Movie not found' });
         }
@@ -79,8 +79,8 @@ const deleteMovie = async (req, res) => {
 const getAllBookings = async (req, res) => {
     try {
         const bookings = await Booking.find()
-            .populate('movieId', 'title')
-            .populate('userId', 'name email')
+            .populate('movie', 'title')
+            .populate('user', 'firstName lastName email')
             .sort({ createdAt: -1 });
         
         const totalRevenue = bookings.reduce((sum, b) => sum + b.totalPrice, 0);
@@ -99,28 +99,34 @@ const getAllBookings = async (req, res) => {
 };
 
 // Get dashboard stats
-const getDashboardStats = async (req, res) => {
+const getDashboard = async (req, res) => {
     try {
         const totalMovies = await Movie.countDocuments();
         const totalBookings = await Booking.countDocuments();
-        const totalUsers = await User.countDocuments();
-        
-        const revenue = await Booking.aggregate([
-            { $group: { _id: null, total: { $sum: "$totalPrice" } } }
-        ]);
-        
+        const totalUsers = await Admin.countDocuments();
+
+        const bookings = await Booking.find();
+
+        const totalRevenue = bookings.reduce(
+            (sum, booking) => sum + booking.totalPrice,
+            0
+        );
+
         res.json({
             success: true,
-            stats: {
+            dashboard: {
                 totalMovies,
                 totalBookings,
                 totalUsers,
-                totalRevenue: revenue[0]?.total || 0
+                totalRevenue
             }
         });
+
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message
+        });
     }
 };
 
-module.exports = { getAllMovies, addMovie, updateMovie, deleteMovie, getAllBookings, getDashboardStats};
+module.exports = { getAllMovies, addMovie, updateMovie, deleteMovie, getAllBookings, getDashboard};
