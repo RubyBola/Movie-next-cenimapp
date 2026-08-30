@@ -8,17 +8,17 @@ const sendEmail= require("../utils/sendEmail");
 const Product = require("../model/product");
 const Booking = require('../model/booking');
 
-const user = { name: "John Doe", email: "boluwa@gmail.com:", password: "password123" }
-const user1 = { name: "John Doe 1", email: "boluwa@gmail11.com:", password: "password222123" }
-const user2 = { name: "John Doe 2", email: "boluwa@gmail2222.com:", password: "password1www23" }
-const data = [user, user1, user2,]
+// const user = { name: "John Doe", email: "boluwa@gmail.com:", password: "password123" }
+// const user1 = { name: "John Doe 1", email: "boluwa@gmail11.com:", password: "password222123" }
+// const user2 = { name: "John Doe 2", email: "boluwa@gmail2222.com:", password: "password1www23" }
+// const data = [user, user1, user2,]
 
-console.log("Data before loop:", data[0])
+// console.log("Data before loop:", data[0])
 
-data.forEach((item, index) => {
-    item.name
-    console.log(`Data at index ${index} after loop:`, item)
-})
+// data.forEach((item, index) => {
+//     item.name
+//     console.log(`Data at index ${index} after loop:`, item)
+// })
 
 const generateAccountNumber = () => {
     const randomNum = Math.floor(Math.random() * 10000000000)

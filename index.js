@@ -1,38 +1,47 @@
-const express = require('express')
-const app = express()
-const dotenv = require("dotenv");
-const port = 5009
+const dns = require('dns');
+
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
+const express = require('express');
+const dotenv = require('dotenv');
 
 dotenv.config();
 
+const connectDb = require('./config/db');
 
-const connectDb = require('./config/db')
-connectDb();
+const app = express();
+const port = 5009;
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+const userRoutes = require('./routes/user.routes');
+const adminRoutes = require('./routes/admin.routes');
+const bookingRoutes = require('./routes/booking.routes');
+const productRoutes = require('./routes/product.routes');
+const checkoutRoutes = require('./routes/checkout.routes');
+const cartRoutes = require('./routes/cart.routes');
 
-const userRoutes = require('./routes/user.routes')
-const adminRoutes = require('./routes/admin.routes')
-const bookingRoutes = require('./routes/booking.routes')
-const productRoutes = require('./routes/product.routes')
-const checkoutRoutes = require('./routes/checkout.routes')
-const cartRoutes = require('./routes/cart.routes')
+app.use('/api', userRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/booking', bookingRoutes);
+app.use('/api/product', productRoutes);
+app.use('/api/checkout', checkoutRoutes);
+app.use('/api/cart', cartRoutes);
 
-app.use('/api', userRoutes)
-app.use('/api/admin', adminRoutes)
-app.use('/api/booking', bookingRoutes)
-app.use('/api/product', productRoutes)
-app.use('/api/checkout', checkoutRoutes)
-app.use('/api/cart', cartRoutes)
+console.log("SERVER STARTED !!!");
 
-// app.get('/', (req, res) => {
-//     res.json({ message: "Welcome to our first API call" })
-// })
+const startServer = async () => {
+    try {
+        await connectDb();
 
-console.log("🚀 SERVER FILE CHANGED!!!");
+        app.listen(port, () => {
+            console.log(`Server is running on port ${port}`);
+        });
+    } catch (error) {
+        console.error("Failed to start server:", error.message);
+        process.exit(1);
+    }
+};
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`)
-})
+startServer();
