@@ -1,8 +1,8 @@
 const nodemailer = require("nodemailer");
 
 const sendEmail = async ({ to, subject, text, html }) => {
-  console.log("TO:", to);
-console.log("FROM:", process.env.EMAIL_USERNAME);
+//   console.log("TO:", to);
+// console.log("FROM:", process.env.EMAIL_USERNAME);
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST, // smtp.gmail.com
@@ -14,17 +14,20 @@ console.log("FROM:", process.env.EMAIL_USERNAME);
       },
     });
 
-    const mailOptions = {
-      from: process.env.EMAIL_USERNAME,
-      to,
-      subject,
-      text: text || "",
-      html: html || "",
-    };
+ const mailOptions = {
+  from: {
+    name: "Movie Nest Cinema",
+    address: process.env.EMAIL_USERNAME,
+  },
+  to,
+  subject,
+  text: text || "",
+  html: html || "",
+};
 
     const info = await transporter.sendMail(mailOptions);
 
-    console.log("Email sent:", info.response);
+    // console.log("Email sent:", info.response);
     return { success: true };
 
   } catch (error) {

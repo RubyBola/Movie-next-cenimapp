@@ -27,10 +27,20 @@ const adminSchema = new mongoose.Schema({
     type: String,
     default: "admin"
   },
+ resetToken: {
+    type: String
+  },
 
+  resetTokenExpires: {
+    type: Date
+  },
   // OTP / Verification fields
-  verificationCode: String,
-  verificationCodeExpires: Date,
+  verificationCode: { 
+    type: String 
+  },
+  verificationCodeExpires: { 
+    type: Date 
+  },
   isVerified: {
     type: Boolean,
     default: false

@@ -16,12 +16,27 @@ const userSchema = new mongoose.Schema({
     unique: true,
   },
 
-  password: { type: String, required: true },
+  password: { 
+    type: String, 
+    required: true
+   },
   
-  accountNumber: { type: String },
-  resetToken: {type: String},
-  verificationCode: { type: String },
-  isVerified: { type: Boolean, default: false },
+  accountNumber: {
+     type: String
+     },
+   resetToken: {
+    type: String
+  },
+  resetTokenExpires: {
+    type: Date
+  },
+  verificationCode: { 
+    type: String 
+  },
+  isVerified: { 
+    type: Boolean, 
+    default: false
+   },
 });
 
 // Hash password
