@@ -18,28 +18,33 @@ const adminProtect = async (req, res, next) => {
       process.env.JWT_SECRET
     );
 
+    console.log("ADMIN DECODED:", decoded);
+
     const admin = await Admin.findById(decoded.id)
       .select("-password");
 
     if (!admin) {
-      return res.status(404).json({
+      return res.status(401).json({
         message: "Admin not found"
       });
     }
 
     if (admin.role !== "admin") {
-  return res.status(403).json({
-    message: "Access denied"
-  });
-}
+      return res.status(403).json({
+        message: "Admin access required"
+      });
+    }
 
+    // Attach admin
     req.admin = admin;
 
     next();
 
   } catch (error) {
+    console.error("ADMIN AUTH ERROR:", error.message);
+
     return res.status(401).json({
-      message: "Invalid or expired token"
+      message: "Invalid or expired admin token"
     });
   }
 };

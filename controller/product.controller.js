@@ -54,74 +54,52 @@ const mongoose = require("mongoose");
 // Create a new product
 
 const createProduct = async (req, res) => {
+  console.log("REQ.BODY:", req.body);
+  console.log("REQ.FILE:", req.file);
+  console.log("REQ.ADMIN:", req.admin);
 
-    console.log(req.body);
-    console.log(req.file);
-
-    try {
-
-        // Check image upload first
-        if (!req.file) {
-
-            return res.status(400).json({
-                message: "Please upload an image"
-            });
-        }
-
-        const {
-            name,
-            price,
-            description
-        } = req.body;
-
-        // Validate fields
-        if (!name || !price) {
-
-            return res.status(400).json({
-                message:
-                    "Name and price are required"
-            });
-        }
-
-        // Upload image to cloudinary
-        const result =
-            await cloudinary.uploader.upload(
-                req.file.path
-            );
-
-        // Create product
-        const product =
-            await Product.create({
-
-                name,
-
-                price,
-
-                description,
-
-                image: result.secure_url,
-
-                user: req.user._id
-            });
-
-        res.status(201).json({
-
-            message:
-                "Product created successfully",
-
-            product
-        });
-
-    } catch (error) {
-
-        console.log("FULL ERROR:", error);
-
-        res.status(500).json({
-            error: error.message
-        });
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        message: "Please upload an image"
+      });
     }
-};
 
+    const { name, price, description } = req.body;
+
+    if (!name || !price) {
+      return res.status(400).json({
+        message: "Name and price are required"
+      });
+    }
+
+    const result = await cloudinary.uploader.upload(
+      req.file.path
+    );
+
+    const product = await Product.create({
+      name,
+      price,
+      description,
+      image: result.secure_url,
+
+      // Admin who created the product
+      createdBy: req.admin._id
+    });
+
+    return res.status(201).json({
+      message: "Product created successfully",
+      product
+    });
+
+  } catch (error) {
+    console.log("FULL ERROR:", error);
+
+    return res.status(500).json({
+      error: error.message
+    });
+  }
+};
 // Get all products
 const getAllProducts = async (req, res) => {
     try {

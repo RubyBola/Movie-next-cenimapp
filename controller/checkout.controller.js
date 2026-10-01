@@ -100,7 +100,7 @@ const checkout = async (req, res) => {
         res.status(201).json({
 
             message:
-               "Checkout successful 🎉",
+               "Checkout successful",
 
             booking
         });

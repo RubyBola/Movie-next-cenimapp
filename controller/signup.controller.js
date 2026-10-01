@@ -66,79 +66,119 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-const forgotPassword = async (email) => {
-  const user = await User.findOne({ email });
+const forgotpassword = async (req, res) => {
+  try {
+    const email = req.body.email?.trim().toLowerCase();
+console.log("EMAIL FROM REQUEST:", email);
+    // Check if email was provided
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
 
-  if (!user) {
-    throw new Error("User not found");
+    // Find user
+    const user = await User.findOne({ email });
+console.log("USER FROM DATABASE:", user);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Generate 5-digit reset code
+    const resetToken = Math.floor(
+      10000 + Math.random() * 90000
+    ).toString();
+
+    // Save reset code and expiration
+    user.resetToken = resetToken;
+    user.resetTokenExpires = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
+
+    await user.save();
+
+    // Send reset code to email
+    await sendEmail({
+      to: user.email,
+      subject: "Movie Nest Cinema - Password Reset Code",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px;">
+          
+          <h2 style="text-align: center;">
+            🎬 Movie Nest Cinema
+          </h2>
+
+          <p>Hello ${user.firstName},</p>
+
+          <p>
+            We received a request to reset your Movie Nest Cinema
+            account password.
+          </p>
+
+          <p>
+            Use the verification code below to reset your password:
+          </p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <h2 style="
+              letter-spacing: 8px;
+              background: #f4f4f4;
+              display: inline-block;
+              padding: 15px 25px;
+              border-radius: 8px;
+            ">
+              ${resetToken}
+            </h2>
+          </div>
+
+          <p>
+            This code will expire in <strong>15 minutes</strong>.
+          </p>
+
+          <p>
+            If you did not request this password reset,
+            please ignore this email.
+          </p>
+
+          <hr>
+
+          <p style="font-size: 12px; color: #777; text-align: center;">
+            © ${new Date().getFullYear()} Movie Nest Cinema
+          </p>
+
+        </div>
+      `,
+    });
+
+    // Success response
+    return res.status(200).json({
+      success: true,
+      message: "Password reset code sent to your email",
+    });
+
+  } catch (error) {
+    console.error("User forgot password error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send password reset code",
+      error: error.message,
+    });
   }
-
-  // Generate 5-digit reset code
-  const resetToken = Math.floor(
-    10000 + Math.random() * 90000
-  ).toString();
-
-  // Save reset code and expiration
-  user.resetToken = resetToken;
-  user.resetTokenExpires = new Date(
-    Date.now() + 15 * 60 * 1000
-  );
-
-  await user.save();
-
-  // Send reset code to email
-  await sendEmail({
-    to: user.email,
-    subject: "Movie Nest Cinema - Password Reset Code",
-    html: `
-      <div style="font-family: Arial, sans-serif;">
-        <h2>🎬 Movie Nest Cinema</h2>
-
-        <p>Hello ${user.firstName},</p>
-
-        <p>
-          Use the code below to reset your password:
-        </p>
-
-        <h2 style="
-          letter-spacing: 8px;
-          background: #f4f4f4;
-          display: inline-block;
-          padding: 15px 25px;
-          border-radius: 8px;
-        ">
-          ${resetToken}
-        </h2>
-
-        <p>
-          This code will expire in <strong>15 minutes</strong>.
-        </p>
-
-        <p>
-          If you didn't request this password reset,
-          please ignore this email.
-        </p>
-
-        <hr>
-
-        <p style="font-size: 12px; color: #777;">
-          © ${new Date().getFullYear()} Movie Nest Cinema
-        </p>
-      </div>
-    `,
-  });
-
-  return true;
 };
-const resetPassword = async (req, res) => {
+const resetpassword = async (req, res) => {
   try {
     const {
-      token,
+      otp,
       newPassword,
       confirmPassword
     } = req.body;
 
-    if (!token || !newPassword || !confirmPassword) {
+    if (!otp || !newPassword || !confirmPassword) {
       return res.status(400).json({
         message: "All fields are required"
       });
@@ -156,9 +196,8 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    // Find user with valid reset code
     const user = await User.findOne({
-      resetToken: token,
+      resetToken: otp,
       resetTokenExpires: {
         $gt: new Date()
       }
@@ -170,13 +209,9 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-
-    user.password = await bcrypt.hash(
-      newPassword,
-      salt
-    );
+    // Assign plain password.
+    // The User model's pre("save") middleware will hash it.
+    user.password = newPassword;
 
     // Clear reset code
     user.resetToken = undefined;
@@ -184,14 +219,14 @@ const resetPassword = async (req, res) => {
 
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Password reset successful ✅"
     });
 
   } catch (error) {
     console.error("Reset password error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Server error"
     });
   }
@@ -370,79 +405,119 @@ const verifyAdminEmail = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-const adminForgotPassword = async (email) => {
-  const user = await User.findOne({ email });
+const adminForgotPassword = async (req, res) => {
+  try {
+    const email = req.body.email?.trim().toLowerCase();
+console.log("EMAIL FROM REQUEST:", email);
+    // Check if email was provided
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
 
-  if (!user) {
-    throw new Error("User not found");
+    // Find user
+    const admin = await Admin.findOne({ email });
+console.log("ADMIN FROM DATABASE:", admin);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found",
+      });
+    }
+
+    // Generate 5-digit reset code
+    const resetToken = Math.floor(
+      10000 + Math.random() * 90000
+    ).toString();
+
+    // Save reset code and expiration
+    admin.resetToken = resetToken;
+    admin.resetTokenExpires = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
+
+    await admin.save();
+
+    // Send reset code to email
+    await sendEmail({
+      to: admin.email,
+      subject: "Movie Nest Cinema - Password Reset Code",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px;">
+          
+          <h2 style="text-align: center;">
+            🎬 Movie Nest Cinema
+          </h2>
+
+          <p>Hello ${admin.firstName},</p>
+
+          <p>
+            We received a request to reset your Movie Nest Cinema
+            account password.
+          </p>
+
+          <p>
+            Use the verification code below to reset your password:
+          </p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <h2 style="
+              letter-spacing: 8px;
+              background: #f4f4f4;
+              display: inline-block;
+              padding: 15px 25px;
+              border-radius: 8px;
+            ">
+              ${resetToken}
+            </h2>
+          </div>
+
+          <p>
+            This code will expire in <strong>15 minutes</strong>.
+          </p>
+
+          <p>
+            If you did not request this password reset,
+            please ignore this email.
+          </p>
+
+          <hr>
+
+          <p style="font-size: 12px; color: #777; text-align: center;">
+            © ${new Date().getFullYear()} Movie Nest Cinema
+          </p>
+
+        </div>
+      `,
+    });
+
+    // Success response
+    return res.status(200).json({
+      success: true,
+      message: "Password reset code sent to your email",
+    });
+
+  } catch (error) {
+    console.error("Admin forgot password error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send password reset code",
+      error: error.message,
+    });
   }
-
-  // Generate 5-digit reset code
-  const resetToken = Math.floor(
-    10000 + Math.random() * 90000
-  ).toString();
-
-  // Save reset code and expiration
-  user.resetToken = resetToken;
-  user.resetTokenExpires = new Date(
-    Date.now() + 15 * 60 * 1000
-  );
-
-  await user.save();
-
-  // Send reset code to email
-  await sendEmail({
-    to: user.email,
-    subject: "Movie Nest Cinema - Password Reset Code",
-    html: `
-      <div style="font-family: Arial, sans-serif;">
-        <h2>🎬 Movie Nest Cinema</h2>
-
-        <p>Hello ${user.firstName},</p>
-
-        <p>
-          Use the code below to reset your password:
-        </p>
-
-        <h2 style="
-          letter-spacing: 8px;
-          background: #f4f4f4;
-          display: inline-block;
-          padding: 15px 25px;
-          border-radius: 8px;
-        ">
-          ${resetToken}
-        </h2>
-
-        <p>
-          This code will expire in <strong>15 minutes</strong>.
-        </p>
-
-        <p>
-          If you didn't request this password reset,
-          please ignore this email.
-        </p>
-
-        <hr>
-
-        <p style="font-size: 12px; color: #777;">
-          © ${new Date().getFullYear()} Movie Nest Cinema
-        </p>
-      </div>
-    `,
-  });
-
-  return true;
 };
 const adminResetPassword = async (req, res) => {
   try {
     const {
-      token,
+      otp,
       newPassword,
       confirmPassword
     } = req.body;
 
-    if (!token || !newPassword || !confirmPassword) {
+    if (!otp || !newPassword || !confirmPassword) {
       return res.status(400).json({
         message: "All fields are required"
       });
@@ -460,42 +535,37 @@ const adminResetPassword = async (req, res) => {
       });
     }
 
-    // Find user with valid reset code
-    const user = await User.findOne({
-      resetToken: token,
+    const admin = await Admin.findOne({
+      resetToken: otp,
       resetTokenExpires: {
         $gt: new Date()
       }
     });
 
-    if (!user) {
+    if (!admin) {
       return res.status(400).json({
         message: "Invalid or expired reset code"
       });
     }
 
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-
-    user.password = await bcrypt.hash(
-      newPassword,
-      salt
-    );
+    // Assign plain password.
+    // The Admin model's pre("save") middleware will hash it.
+    admin.password = newPassword;
 
     // Clear reset code
-    user.resetToken = undefined;
-    user.resetTokenExpires = undefined;
+    admin.resetToken = undefined;
+    admin.resetTokenExpires = undefined;
 
-    await user.save();
+    await admin.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Password reset successful ✅"
     });
 
   } catch (error) {
     console.error("Reset password error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Server error"
     });
   }
@@ -548,41 +618,67 @@ const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const admin = await Admin.findOne({ email });
+    console.log("LOGIN EMAIL:", email);
+    console.log("PASSWORD PROVIDED:", !!password);
+
+    const admin = await Admin.findOne({ email }).select("+password");
+
+    console.log("ADMIN FOUND:", !!admin);
 
     if (!admin) {
-      return res.status(404).json({ message: "Admin not found" });
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
     }
 
+    console.log("ADMIN VERIFIED:", admin.isVerified);
+    console.log("PASSWORD HASH EXISTS:", !!admin.password);
+
     if (!admin.isVerified) {
-      return res.status(400).json({ message: "Please verify your movie nest cinema email first" });
+      return res.status(400).json({
+        message: "Please verify your Movie Nest Cinema email first"
+      });
     }
 
     const isMatch = await admin.comparePassword(password);
 
+    console.log("PASSWORD MATCH:", isMatch);
+
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
     }
 
-    const otp = jwt.sign(
-      { id: admin._id, role: admin.role },
+    const accessToken = jwt.sign(
+      {
+        id: admin._id,
+        role: admin.role
+      },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      {
+        expiresIn: "1d"
+      }
     );
 
-    res.json({
+    return res.status(200).json({
       message: "Login successful",
-      otp,
+      accessToken,
       admin: {
         id: admin._id,
+        firstName: admin.firstName,
+        lastName: admin.lastName,
         email: admin.email,
         role: admin.role
       }
     });
 
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Admin login error:", error);
+
+    return res.status(500).json({
+      message: "Server error"
+    });
   }
 };
 
@@ -760,4 +856,4 @@ const fetchUser = async (req, res) => {
     } return user
 }
 
-module.exports = { signup, login, loop, updateUser, updatePassword, sleep, greet, uploadProfileImage, fetchUser,verifyAdminEmail,loginUser,uploadProduct,forgotPassword,resetPassword,adminSignup,adminLogin,verifyEmail,adminForgotPassword,adminResetPassword}
+module.exports = { signup, login, loop, updateUser, updatePassword, sleep, greet, uploadProfileImage, fetchUser,verifyAdminEmail,loginUser,uploadProduct,forgotpassword,resetpassword,adminSignup,adminLogin,verifyEmail,adminForgotPassword,adminResetPassword}

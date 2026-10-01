@@ -1,5 +1,5 @@
 const express = require("express")
-const { signup, login,loop,adminLogin, updateUser, updatePassword, uploadProfileImage, fetchUser,verifyEmail,loginUser,uploadProduct,forgotPassword,resetPassword, adminSignup} = require("../controller/signup.controller");
+const { signup, login,loop,adminLogin, updateUser, updatePassword, uploadProfileImage, fetchUser,verifyEmail,loginUser,uploadProduct,adminSignup, forgotpassword, resetpassword} = require("../controller/signup.controller");
 const upload = require("../middleware/upload");
 const protect = require("../middleware/auth")
 const router = express.Router()
@@ -8,18 +8,11 @@ const cloudinary = require("../config/cloudinary");
 
 router.post("/signup", signup)
 router.post("/login", login)
-router.put("/update-user/:id", updateUser)
-router.get("/loop", loop)
 router.put("/update-password/:id", updatePassword)
-router.post("/upload-pic", protect, upload.single("image"), uploadProfileImage)
-router.get("/, protect", fetchUser)
 router.post("/verify-email", verifyEmail)
-router.post("/login", loginUser);
-router.post("/products", uploadProduct);
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", resetPassword);
-router.post("/admin/login", adminLogin);
-router.post("/admin/signup",adminSignup)
+router.post("/Forgot-password",protect,forgotpassword)
+router.post("/Reset-password",protect,resetpassword)
+
 
 
 

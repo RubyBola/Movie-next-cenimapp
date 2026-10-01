@@ -13,8 +13,8 @@ const adminProtect = require("../middleware/admin");
 router.post("/login",adminLogin);
 router.post("/verify-Email",verifyAdminEmail);
 router.post("/signup",adminSignup)
-router.post("/forgot-password",adminProtect,adminForgotPassword);
-router.post("/reset-password", adminProtect, adminResetPassword);
+router.post("/forgot-password",adminForgotPassword);
+router.post("/reset-password",adminResetPassword);
 router.get("/getallmovies",adminProtect,getAllMovies)
 router.get("/getmovies",adminProtect,getMovies)
 router.post("/addmovies",adminProtect,addMovie)
